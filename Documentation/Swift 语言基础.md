@@ -309,7 +309,7 @@ print("The largest value in interestingNumbers is \(largest) (\(largestKey)).")
 
 使用 while 重复一段代码，直到条件改变。循环的条件也可以放在末尾，这样可以确保循环至少运行一次。
 
-```javascript 
+```swift 
 // 先判断条件，再执行循环体。
 var n = 2
 while n < 100 {
@@ -940,4 +940,243 @@ let connection = ServerConnection()
 let userID = await connection.connect()
 print(userID)
 // Prints："97"
+```
+
+
+### 协议和扩展
+
+#### 协议声明
+
+用protocol声明协议。
+
+```swift 
+protocol ExampleProtocol {
+     var simpleDescription: String { get }
+     mutating func adjust()
+}
+```
+
+
+#### 协议使用
+
+类、枚举和结构都可以采用协议。
+
+```swift 
+class SimpleClass: ExampleProtocol {
+     var simpleDescription: String = "A very simple class."
+     var anotherProperty: Int = 69105
+     func adjust() {
+          simpleDescription += "  Now 100% adjusted."
+     }
+}
+var a = SimpleClass()
+a.adjust()
+let aDescription = a.simpleDescription
+print("aDescription: \(aDescription)")
+// Print "aDescription: A very simple class.  Now 100% adjusted."
+struct SimpleStructure: ExampleProtocol {
+     var simpleDescription: String = "A simple structure"
+     mutating func adjust() {
+          simpleDescription += " (adjusted)"
+     }
+}
+var b = SimpleStructure()
+b.adjust()
+let bDescription = b.simpleDescription
+print("bDescription: \(bDescription)")
+// Print "bDescription: A simple structure (adjusted)"
+
+
+```
+
+
+#### extension扩展
+
+用于extension向现有类型添加功能，例如新方法和计算属性。您可以使用扩展为在其他位置声明的类型，甚至从库或框架导入的类型添加协议一致性。
+
+```swift 
+extension Int: ExampleProtocol {
+     var simpleDescription: String {
+          return "The number \(self)"
+     }
+     mutating func adjust() {
+          self += 42
+     }
+}
+print(7.simpleDescription)
+// Print "The number 7"
+```
+
+
+#### 协议类型
+
+你可以像使用任何其他命名类型一样使用协议名称——例如，创建一个包含不同类型但均遵循同一协议的对象集合。当你处理类型为装箱协议类型的值时，协议定义之外的方法将不可用
+
+```swift 
+let protocolValue: ExampleProtocol = a // 这里的a是一个类，而不是一个协议
+print(protocolValue.simpleDescription)
+// Print "A very simple class.  Now 100% adjusted."
+// protocolValue.anotherProperty  
+// Uncomment to see the error
+```
+
+
+### 错误处理
+
+#### 定义错误类型
+
+您可以使用任何采用该Error协议的类型来表示错误。
+
+```swift 
+enum PrinterError: Error {
+    case outOfPaper
+    case noToner
+    case onFire
+}
+```
+
+
+#### 抛出错误
+
+用于throw抛出错误，并throws标记可能抛出错误的函数。如果在函数中抛出错误，该函数会立即返回，并且调用该函数的代码会处理该错误。
+
+```swift 
+func send(job: Int, toPrinter printerName: String) throws -> String {
+    if printerName == "Never Has Toner" {
+        throw PrinterError.noToner
+    }
+    return "Job sent"
+}
+```
+
+
+#### 处理错误
+
+您可以使用do-catch语句来处理错误。do块包含可能抛出错误的代码，而catch块包含处理错误的代码。
+
+```swift 
+do {
+    let printerResponse = try send(job: 1040, toPrinter: "Bi Sheng")
+    print(printerResponse)
+} catch {    // 这里的error是一个Error类型的变量
+    print(error)
+}
+// Print "Job sent"
+```
+
+
+#### 处理特定错误
+
+您可以提供多个catch块来处理特定的错误。您可以在后面写入一个模式，就像在 switch 中catch写入 after 一样。case后面的模式必须是一个错误类型。
+
+```swift 
+do {
+    let printerResponse = try send(job: 1440, toPrinter: "Gutenberg")
+    print(printerResponse)
+} catch PrinterError.onFire {
+    print("I'll just put this over here, with the rest of the fire.")
+} catch let printerError as PrinterError {
+    print("Printer error: \(printerError).")
+} catch {
+    print(error)
+}
+// Prints "Job sent"
+```
+
+
+#### 使用try?来处理错误
+
+另外一种处理错误的方式是使用try?来处理错误。如果错误发生，try?将返回nil。
+
+```swift 
+let printerSuccess = try? send(job: 1884, toPrinter: "Mergenthaler")
+let printerFailure = try? send(job: 1885, toPrinter: "Never Has Toner")
+print(printerSuccess)
+// Prints "Optional("Job sent")"
+print(printerFailure)
+// Prints "nil"
+```
+
+
+#### defer
+
+用于defer延迟执行代码，直到当前作用域结束。defer块中的代码将在函数返回之前执行。
+
+用于defer编写在函数中所有其他代码之后、函数返回之前执行的代码块。无论函数是否抛出错误，都会执行该代码。您可以使用defer它将设置代码和清理代码并排编写，即使它们需要在不同的时间执行。
+
+```swift 
+var fridgeIsOpen = false
+let fridgeContent = ["milk", "eggs", "leftovers"]
+
+
+func fridgeContains(_ food: String) -> Bool {
+    fridgeIsOpen = true
+    defer {
+        fridgeIsOpen = false
+    }
+
+
+    let result = fridgeContent.contains(food)
+    return result
+}
+if fridgeContains("banana") {
+    print("Found a banana")
+}
+print(fridgeIsOpen)
+// Prints "false"
+```
+
+
+### 泛型
+
+#### 泛型定义
+
+在尖括号内写一个名称来创建通用函数或类型。
+
+```swift 
+func makeArray<Item>(repeating item: Item, numberOfTimes: Int) -> [Item] {
+    var result: [Item] = []
+    for _ in 0..<numberOfTimes {
+         result.append(item)
+    }
+    return result
+}
+print(makeArray(repeating: "knock", numberOfTimes: 4))
+// Print "[knock, knock, knock, knock]"
+```
+
+
+#### 泛型使用
+
+您可以创建函数和方法以及类、枚举和结构的通用形式
+
+```swift 
+enum OptionalValue<Wrapped> {
+    case none
+    case some(Wrapped)
+}
+var possibleInteger: OptionalValue<Int> = .none
+possibleInteger = .some(100)
+```
+
+
+#### 在where中使用
+
+在主体之前使用where来指定一系列要求 — — 例如，要求类型实现协议、要求两种类型相同或要求类具有特定的超类。
+
+```swift 
+func anyCommonElements<T: Sequence, U: Sequence>(_ lhs: T, _ rhs: U) -> Bool
+    where T.Element: Equatable, T.Element == U.Element
+{
+    for lhsItem in lhs {
+        for rhsItem in rhs {
+            if lhsItem == rhsItem {
+                return true
+            }
+        }
+    }
+   return false
+}
+print(anyCommonElements([1, 2, 3], [3]))
+// Print "true"
 ```
